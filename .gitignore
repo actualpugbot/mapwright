@@ -23,3 +23,4 @@ coverage/
 # local QA artifacts
 qa/
 public/test.png
+.gstack/

@@ -37,8 +37,8 @@ export function MapPreview2D({ result, showGrid = true }: MapPreview2DProps) {
             className="pointer-events-none absolute inset-0"
             style={{
               backgroundImage:
-                "linear-gradient(to right, rgba(255,255,255,0.35) 1px, transparent 1px)," +
-                "linear-gradient(to bottom, rgba(255,255,255,0.35) 1px, transparent 1px)",
+                "linear-gradient(to right, rgba(28,39,48,0.28) 1px, transparent 1px)," +
+                "linear-gradient(to bottom, rgba(28,39,48,0.28) 1px, transparent 1px)",
               backgroundSize: `${100 / mapsWide}% ${100 / mapsTall}%`,
             }}
           />

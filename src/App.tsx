@@ -38,7 +38,7 @@ export default function App() {
       <main className="grid min-h-0 flex-1 grid-cols-1 gap-4 p-4 sm:p-6 lg:grid-cols-[1fr_360px]">
         <section className="panel relative flex min-h-[60vh] items-center justify-center overflow-hidden p-4 lg:min-h-0">
           {error ? (
-            <div className="max-w-sm text-center text-sm text-red-400">
+            <div className="max-w-sm text-center text-sm text-red-600">
               Couldn't load the block palette: {error}
             </div>
           ) : !source ? (
