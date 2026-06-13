@@ -1,0 +1,145 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-950 text-ink-100 font-sans antialiased;
+    margin: 0;
+    background-image: radial-gradient(
+        1200px 600px at 80% -10%,
+        rgba(91, 156, 255, 0.06),
+        transparent 60%
+      ),
+      radial-gradient(900px 500px at -10% 110%, rgba(127, 178, 56, 0.05), transparent 55%);
+  }
+
+  /* Pixel-accurate previews must never be smoothed. */
+  canvas.pixelated,
+  img.pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  ::selection {
+    background: rgba(91, 156, 255, 0.3);
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-ink-700/60 bg-ink-850/80 shadow-soft backdrop-blur;
+  }
+
+  .panel-pad {
+    @apply p-4 sm:p-5;
+  }
+
+  .label {
+    @apply text-xs font-medium uppercase tracking-wide text-ink-400;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2 text-sm font-medium
+      transition-colors duration-150 focus:outline-none focus-visible:ring-2
+      focus-visible:ring-accent/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-soft shadow-soft;
+  }
+
+  .btn-ghost {
+    @apply btn bg-ink-800/60 text-ink-200 hover:bg-ink-700/70 border border-ink-700/60;
+  }
+
+  .btn-subtle {
+    @apply btn text-ink-300 hover:bg-ink-800/60;
+  }
+
+  .seg {
+    @apply inline-flex rounded-xl border border-ink-700/60 bg-ink-900/60 p-1;
+  }
+
+  .seg-item {
+    @apply rounded-lg px-3 py-1.5 text-sm font-medium text-ink-300 transition-colors
+      hover:text-ink-100;
+  }
+
+  .seg-item-active {
+    @apply bg-ink-700 text-ink-100 shadow-soft;
+  }
+
+  /* Checkerboard backing for transparent preview areas. */
+  .checker {
+    background-color: #1b1f26;
+    background-image:
+      linear-gradient(45deg, #20252e 25%, transparent 25%),
+      linear-gradient(-45deg, #20252e 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #20252e 75%),
+      linear-gradient(-45deg, transparent 75%, #20252e 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-ink-700/70 bg-ink-900/70 px-3 py-2 text-sm
+      text-ink-100 placeholder:text-ink-500 focus:border-accent/60 focus:outline-none;
+  }
+}
+
+/* Custom range slider — minimal, consistent across the app. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: theme("colors.ink.700");
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: theme("colors.accent.DEFAULT");
+  border: 2px solid theme("colors.ink.900");
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.12);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  background: theme("colors.accent.DEFAULT");
+  border: 2px solid theme("colors.ink.900");
+  cursor: pointer;
+}
+
+/* Thin scrollbars for side panels. */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: theme("colors.ink.600") transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: theme("colors.ink.700");
+  border-radius: 9999px;
+}
