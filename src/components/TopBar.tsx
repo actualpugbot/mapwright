@@ -12,18 +12,24 @@ export function TopBar({ canExport, onExport }: TopBarProps) {
   const setUiMode = useProject((s) => s.setUiMode);
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-ink-800/70 px-4 py-3 sm:px-6">
-      <div className="flex items-center gap-3">
-        <Logo />
-        <div className="leading-tight">
-          <div className="flex items-baseline gap-2">
-            <span className="text-base font-semibold tracking-tight text-ink-100">
-              Mapwright
-            </span>
-            <span className="hidden text-xs text-ink-400 sm:inline">
-              Minecraft Map Art Studio
-            </span>
-          </div>
+    <header className="flex items-center justify-between gap-4 border-b border-ink-700/70 bg-ink-850/70 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-ink-850/60 sm:px-6">
+      <div className="flex min-w-0 items-center gap-3">
+        <span
+          className="flex-none rounded-[10px]"
+          style={{ boxShadow: "0 4px 12px rgba(47,116,224,0.3)" }}
+        >
+          <Logo size={34} />
+        </span>
+        <div className="flex items-baseline gap-2 leading-tight">
+          <span className="font-display text-lg font-bold tracking-tight text-ink-100">
+            Mapwright
+          </span>
+          <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
+            Beta
+          </span>
+          <span className="hidden text-sm text-ink-400 sm:inline">
+            Minecraft Map Art Studio
+          </span>
         </div>
       </div>
 

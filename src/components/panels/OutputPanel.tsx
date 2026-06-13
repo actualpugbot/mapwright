@@ -53,7 +53,7 @@ export function OutputPanel({ plan, palette, sourceName }: OutputPanelProps) {
       </div>
 
       {!plan.worldFits && (
-        <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800">
           This build is {plan.height} blocks tall — taller than the world. Reduce the
           size or split it into separate schematics.
         </p>

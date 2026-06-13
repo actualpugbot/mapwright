@@ -167,8 +167,8 @@ export function BuildPreview3D({ plan, palette, sliceMax, showSupports }: BuildP
       camera={{ position: [span * 0.7, span * 0.6, span * 0.9], fov: 45, far: span * 6 + 100 }}
       className="!absolute inset-0"
     >
-      <color attach="background" args={["#0d0f13"]} />
-      <hemisphereLight intensity={0.6} groundColor="#1b1f26" />
+      <color attach="background" args={["#eef0ed"]} />
+      <hemisphereLight intensity={0.75} groundColor="#dde1dc" />
       <directionalLight position={[span, span * 1.4, span * 0.6]} intensity={1.5} castShadow />
       <Suspense fallback={null}>
         <Scene plan={plan} palette={palette} sliceMax={sliceMax} showSupports={showSupports} />
