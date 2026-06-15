@@ -11,9 +11,16 @@ export interface QuantizeOptions {
   dither: DitherMethod;
   /** 0..100 */
   strength: number;
+  /**
+   * When true, fully transparent pixels (alpha 0) are left blank (index -1).
+   * When false (default), every pixel becomes a block using its own colour —
+   * callers should inpaint transparent areas beforehand (see processImage) so
+   * "blank" pixels carry a sensible colour rather than transparent black.
+   */
+  allowTransparency?: boolean;
 }
 
-/** Per-pixel matched target index, or -1 for transparent/skipped pixels. */
+/** Per-pixel matched target index. -1 for blank cells (transparent or empty palette). */
 export type IndexMap = Int16Array;
 
 // --- error-diffusion kernels: [dx, dy, weight], with divisor ----------------
@@ -139,7 +146,12 @@ const clamp8 = (v: number) => (v < 0 ? 0 : v > 255 ? 255 : v);
 
 /**
  * Quantize RGBA pixels to the nearest match target, optionally dithering.
- * Returns a per-pixel target index (or -1 for transparent pixels).
+ *
+ * Opaque and partially transparent pixels are always matched to a block using
+ * their own colour. Fully transparent pixels (alpha 0) are left blank (index
+ * -1) when `allowTransparency` is set; otherwise they are matched like any
+ * other pixel (callers inpaint transparent areas first — see processImage).
+ * The result is also -1 wherever the palette has no targets at all.
  */
 export function quantizeImage(
   pixels: Uint8ClampedArray,
@@ -157,19 +169,32 @@ export function quantizeImage(
   const kernel = KERNELS[opts.dither];
   const bayer = BAYER[opts.dither];
   const strength = Math.max(0, Math.min(100, opts.strength)) / 100;
+  const allow = opts.allowTransparency ?? false;
 
   if (kernel) {
-    quantizeErrorDiffusion(pixels, width, height, targets, opts.metric, kernel, strength, out);
+    quantizeErrorDiffusion(pixels, width, height, targets, opts.metric, kernel, strength, allow, out);
   } else if (bayer) {
-    quantizeOrdered(pixels, width, height, targets, opts.metric, bayer, strength, out);
+    quantizeOrdered(pixels, width, height, targets, opts.metric, bayer, strength, allow, out);
   } else {
-    quantizeNearest(pixels, width, height, targets, opts.metric, out);
+    quantizeNearest(pixels, width, height, targets, opts.metric, allow, out);
   }
   return out;
 }
 
-function isTransparent(pixels: Uint8ClampedArray, p: number): boolean {
-  return pixels[p * 4 + 3] < 128;
+/**
+ * Resolve a pixel to the RGB the quantizer should match, or null for "blank".
+ * Every pixel keeps its own colour (so the correct block is chosen, never a
+ * flat fallback); only fully transparent pixels are blank, and only when
+ * transparency is allowed.
+ */
+function resolvePixel(
+  pixels: Uint8ClampedArray,
+  p: number,
+  allowTransparency: boolean,
+): RGB | null {
+  const o = p * 4;
+  if (allowTransparency && pixels[o + 3] === 0) return null;
+  return [pixels[o], pixels[o + 1], pixels[o + 2]];
 }
 
 function quantizeNearest(
@@ -178,21 +203,22 @@ function quantizeNearest(
   height: number,
   targets: QuantizeTarget[],
   metric: ColorMetric,
+  allowTransparency: boolean,
   out: IndexMap,
 ): void {
   // Cache by packed RGB — flat-colour images have far fewer colours than pixels.
   const cache = new Map<number, number>();
   const n = width * height;
   for (let p = 0; p < n; p++) {
-    if (isTransparent(pixels, p)) {
+    const c = resolvePixel(pixels, p, allowTransparency);
+    if (c === null) {
       out[p] = -1;
       continue;
     }
-    const o = p * 4;
-    const key = (pixels[o] << 16) | (pixels[o + 1] << 8) | pixels[o + 2];
+    const key = (c[0] << 16) | (c[1] << 8) | c[2];
     let idx = cache.get(key);
     if (idx === undefined) {
-      idx = nearest(pixels[o], pixels[o + 1], pixels[o + 2], targets, metric);
+      idx = nearest(c[0], c[1], c[2], targets, metric);
       cache.set(key, idx);
     }
     out[p] = idx;
@@ -207,6 +233,7 @@ function quantizeOrdered(
   metric: ColorMetric,
   bayer: { n: number; m: number[] },
   strength: number,
+  allowTransparency: boolean,
   out: IndexMap,
 ): void {
   const amp = 56 * strength; // RGB spread of the threshold nudge
@@ -214,13 +241,13 @@ function quantizeOrdered(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const p = y * width + x;
-      if (isTransparent(pixels, p)) {
+      const c = resolvePixel(pixels, p, allowTransparency);
+      if (c === null) {
         out[p] = -1;
         continue;
       }
-      const o = p * 4;
       const t = (m[(y % n) * n + (x % n)] / (n * n) - 0.5) * amp;
-      out[p] = nearest(pixels[o] + t, pixels[o + 1] + t, pixels[o + 2] + t, targets, metric);
+      out[p] = nearest(c[0] + t, c[1] + t, c[2] + t, targets, metric);
     }
   }
 }
@@ -233,21 +260,29 @@ function quantizeErrorDiffusion(
   metric: ColorMetric,
   kernel: Kernel,
   strength: number,
+  allowTransparency: boolean,
   out: IndexMap,
 ): void {
-  // Float working buffer (RGB) carrying accumulated error.
+  // Float working buffer (RGB) carrying accumulated error. Blank pixels stay 0
+  // and are skipped below so they neither receive nor emit error.
   const buf = new Float32Array(width * height * 3);
   const n = width * height;
+  const blank = new Uint8Array(n);
   for (let p = 0; p < n; p++) {
-    buf[p * 3] = pixels[p * 4];
-    buf[p * 3 + 1] = pixels[p * 4 + 1];
-    buf[p * 3 + 2] = pixels[p * 4 + 2];
+    const c = resolvePixel(pixels, p, allowTransparency);
+    if (c === null) {
+      blank[p] = 1;
+      continue;
+    }
+    buf[p * 3] = c[0];
+    buf[p * 3 + 1] = c[1];
+    buf[p * 3 + 2] = c[2];
   }
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const p = y * width + x;
-      if (isTransparent(pixels, p)) {
+      if (blank[p]) {
         out[p] = -1;
         continue;
       }

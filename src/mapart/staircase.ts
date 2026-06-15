@@ -75,37 +75,44 @@ export function buildPlan(
       if (h < colMin) colMin = h;
     }
     if (perColumnNormalize && colMin !== Infinity) {
-      // shift this column so its lowest block sits at y=0
+      // shift this column so its lowest block sits at y=0. Presence is keyed on
+      // colorId (≥0), NOT surfaceY — a valid height can legitimately be -1, the
+      // same value as the NONE sentinel, so testing surfaceY would drop it.
       for (let z = 0; z < L; z++) {
         const p = z * W + x;
-        if (surfaceY[p] !== NONE) surfaceY[p] -= colMin;
+        if (colorId[p] >= 0) surfaceY[p] -= colMin;
       }
     }
   }
 
-  // 2. Support blocks.
+  // 2. Support blocks. Track presence separately (supportY can be -1 too).
+  const hasSupport = new Uint8Array(n);
   const needsSupport = (cid: number): boolean => {
     if (settings.supportMode === "none") return false;
     if (settings.supportMode === "allOptimized") return true;
     return Boolean(gravityByColor.get(cid) || transparentByColor.get(cid));
   };
   for (let p = 0; p < n; p++) {
-    if (surfaceY[p] === NONE) continue;
-    if (needsSupport(colorId[p])) supportY[p] = surfaceY[p] - 1;
+    if (colorId[p] < 0) continue;
+    if (needsSupport(colorId[p])) {
+      supportY[p] = surfaceY[p] - 1;
+      hasSupport[p] = 1;
+    }
   }
 
-  // 3. Global normalization → all Y ≥ 0.
+  // 3. Global normalization → all Y ≥ 0. Keyed on colorId / hasSupport, never
+  // on the height value (see note above).
   for (let p = 0; p < n; p++) {
-    if (surfaceY[p] !== NONE) {
+    if (colorId[p] >= 0) {
       if (surfaceY[p] < globalMin) globalMin = surfaceY[p];
       if (surfaceY[p] > globalMax) globalMax = surfaceY[p];
     }
-    if (supportY[p] !== NONE && supportY[p] < globalMin) globalMin = supportY[p];
+    if (hasSupport[p] && supportY[p] < globalMin) globalMin = supportY[p];
   }
   if (globalMin !== 0) {
     for (let p = 0; p < n; p++) {
-      if (surfaceY[p] !== NONE) surfaceY[p] -= globalMin;
-      if (supportY[p] !== NONE) supportY[p] -= globalMin;
+      if (colorId[p] >= 0) surfaceY[p] -= globalMin;
+      if (hasSupport[p]) supportY[p] -= globalMin;
     }
     globalMax -= globalMin;
   }
@@ -114,8 +121,8 @@ export function buildPlan(
   let visibleCount = 0;
   let supportCount = 0;
   for (let p = 0; p < n; p++) {
-    if (surfaceY[p] !== NONE) visibleCount++;
-    if (supportY[p] !== NONE) supportCount++;
+    if (colorId[p] >= 0) visibleCount++;
+    if (hasSupport[p]) supportCount++;
   }
   const peakHeight = globalMax + 1;
 

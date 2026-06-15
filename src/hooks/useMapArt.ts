@@ -29,7 +29,7 @@ export function useMapArt() {
     const my = ++seq.current;
     setStatus("rendering");
     const timer = setTimeout(() => {
-      renderMapArt(source.bitmap, settings, palette)
+      renderMapArt(source.bitmap, settings, palette, source.hasTransparency)
         .then((r) => {
           if (my === seq.current) {
             setResult(r);

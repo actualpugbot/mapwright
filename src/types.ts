@@ -93,7 +93,9 @@ export interface ImageAdjustments {
   rotate: 0 | 90 | 180 | 270;
   flipH: boolean;
   flipV: boolean;
-  /** Background color for transparent pixels (hex), or null to keep transparent → NONE. */
+  /** When true, fully transparent areas are left blank; when false they are inpainted with nearby colours. */
+  allowTransparency: boolean;
+  /** Fallback fill colour (hex) used only when the image is entirely transparent. null → black. */
   background: string | null;
 }
 
@@ -133,7 +135,8 @@ export const DEFAULT_ADJUST: ImageAdjustments = {
   rotate: 0,
   flipH: false,
   flipV: false,
-  background: null,
+  allowTransparency: false,
+  background: "#000000",
 };
 
 export const DEFAULT_SETTINGS: Settings = {

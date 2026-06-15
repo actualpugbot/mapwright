@@ -30,6 +30,8 @@ export interface SourceImage {
   height: number;
   /** Decoded pixels for processing (kept out of persistence). */
   bitmap: ImageBitmap;
+  /** True if the image has fully transparent pixels (alpha 0). */
+  hasTransparency: boolean;
 }
 
 interface ProjectState {
@@ -89,6 +91,20 @@ export const useProject = create<ProjectState>()(
     name: "mapwright",
     // Persist only serializable config — never the decoded image/bitmap.
     partialize: (s) => ({ settings: s.settings, uiMode: s.uiMode, theme: s.theme }),
+    // Deep-merge persisted state so newly added settings (e.g. adjust fields)
+    // pick up their defaults instead of being dropped to undefined.
+    merge: (persisted, current) => {
+      const p = (persisted ?? {}) as Partial<ProjectState>;
+      return {
+        ...current,
+        ...p,
+        settings: {
+          ...current.settings,
+          ...(p.settings ?? {}),
+          adjust: { ...current.settings.adjust, ...(p.settings?.adjust ?? {}) },
+        },
+      };
+    },
   },
   ),
 );
