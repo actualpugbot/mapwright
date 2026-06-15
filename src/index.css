@@ -65,8 +65,43 @@
 @tailwind utilities;
 
 @layer base {
+  /* Theme channels — "R G B" triplets consumed by tailwind.config.js via
+     rgb(var(--x) / <alpha-value>). Light is the default; `.dark` on <html>
+     swaps every surface/text token at once, so component classes never change. */
   :root {
     color-scheme: light;
+    --ink-950: 236 238 235; /* paper — app background */
+    --ink-900: 242 244 241; /* sunken surface */
+    --ink-850: 255 255 255; /* surface — cards */
+    --ink-800: 232 235 230; /* faint fill / hairline */
+    --ink-700: 221 225 220; /* borders, slider track */
+    --ink-600: 194 200 193; /* faint line, footer */
+    --ink-500: 154 164 174; /* placeholder text */
+    --ink-400: 108 120 132; /* muted text */
+    --ink-300: 58 71 80; /* secondary text */
+    --ink-200: 40 51 60; /* strong ink */
+    --ink-100: 28 39 48; /* primary text */
+    --accent: 47 116 224;
+    --accent-soft: 31 99 207; /* darker — hover / press */
+    --accent-glow: 31 99 207;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --ink-950: 14 19 24; /* deep slate — app background */
+    --ink-900: 21 27 34; /* sunken surface */
+    --ink-850: 26 33 42; /* surface — cards */
+    --ink-800: 34 43 53; /* faint fill / hairline */
+    --ink-700: 44 55 66; /* borders, slider track */
+    --ink-600: 59 71 83; /* faint line, footer */
+    --ink-500: 93 105 117; /* placeholder text */
+    --ink-400: 139 150 161; /* muted text */
+    --ink-300: 176 185 194; /* secondary text */
+    --ink-200: 212 217 223; /* strong ink */
+    --ink-100: 236 238 241; /* primary text */
+    --accent: 74 137 237;
+    --accent-soft: 107 160 242; /* lighter — hover / press on dark */
+    --accent-glow: 124 171 245;
   }
 
   html,
@@ -87,6 +122,16 @@
         transparent 60%
       ),
       linear-gradient(180deg, #f1f3f0, #e9ebe7);
+  }
+
+  /* Dim slate canvas in dark mode. */
+  .dark body {
+    background-image: radial-gradient(
+        1200px 700px at 78% -8%,
+        rgba(74, 137, 237, 0.1),
+        transparent 60%
+      ),
+      linear-gradient(180deg, #11171e, #0c1116);
   }
 
   h1,
@@ -154,7 +199,7 @@
     box-shadow: 0 1px 2px rgba(24, 36, 45, 0.08);
   }
 
-  /* Checkerboard backing for transparent preview areas (light). */
+  /* Checkerboard backing for transparent preview areas. */
   .checker {
     background-color: #f1f3f1;
     background-image:
@@ -164,6 +209,15 @@
       linear-gradient(-45deg, transparent 75%, #e2e6e1 75%);
     background-size: 16px 16px;
     background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  }
+
+  .dark .checker {
+    background-color: #161c22;
+    background-image:
+      linear-gradient(45deg, #20272f 25%, transparent 25%),
+      linear-gradient(-45deg, #20272f 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #20272f 75%),
+      linear-gradient(-45deg, transparent 75%, #20272f 75%);
   }
 
   .field {
@@ -189,7 +243,7 @@ input[type="range"]::-webkit-slider-thumb {
   height: 16px;
   border-radius: 9999px;
   background: theme("colors.accent.DEFAULT");
-  border: 2px solid #ffffff;
+  border: 2px solid rgb(var(--ink-850));
   box-shadow: 0 1px 3px rgba(24, 36, 45, 0.25);
   cursor: pointer;
   transition: transform 0.1s ease;
@@ -202,7 +256,7 @@ input[type="range"]::-moz-range-thumb {
   height: 16px;
   border-radius: 9999px;
   background: theme("colors.accent.DEFAULT");
-  border: 2px solid #ffffff;
+  border: 2px solid rgb(var(--ink-850));
   box-shadow: 0 1px 3px rgba(24, 36, 45, 0.25);
   cursor: pointer;
 }
