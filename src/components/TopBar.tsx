@@ -1,5 +1,6 @@
 import { Logo } from "@/components/Logo";
 import { Segmented } from "@/components/Segmented";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useProject, type UiMode } from "@/state/projectStore";
 
 interface TopBarProps {
@@ -46,6 +47,7 @@ export function TopBar({ canExport, onExport }: TopBarProps) {
           value={uiMode}
           onChange={setUiMode}
         />
+        <ThemeToggle />
         <button
           type="button"
           className="btn-primary"

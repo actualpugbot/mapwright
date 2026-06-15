@@ -7,6 +7,19 @@ import {
 } from "@/types";
 
 export type UiMode = "quick" | "advanced";
+export type Theme = "light" | "dark";
+
+/**
+ * Initial theme before any persisted value loads. The boot script in
+ * index.html already resolves light/dark (persisted choice or system
+ * preference) and reflects it on <html>, so we read back from there.
+ */
+function initialTheme(): Theme {
+  if (typeof document !== "undefined") {
+    return document.documentElement.classList.contains("dark") ? "dark" : "light";
+  }
+  return "light";
+}
 
 /** A loaded source image, decoded to an ImageBitmap-friendly form. */
 export interface SourceImage {
@@ -22,6 +35,10 @@ export interface SourceImage {
 interface ProjectState {
   uiMode: UiMode;
   setUiMode: (m: UiMode) => void;
+
+  theme: Theme;
+  setTheme: (t: Theme) => void;
+  toggleTheme: () => void;
 
   settings: Settings;
   /** Shallow-merge a partial settings patch. */
@@ -39,6 +56,11 @@ export const useProject = create<ProjectState>()(
     (set) => ({
       uiMode: "quick",
       setUiMode: (uiMode) => set({ uiMode }),
+
+      theme: initialTheme(),
+      setTheme: (theme) => set({ theme }),
+      toggleTheme: () =>
+        set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
 
   settings: { ...DEFAULT_SETTINGS, adjust: { ...DEFAULT_SETTINGS.adjust } },
   patchSettings: (patch) =>
@@ -66,7 +88,7 @@ export const useProject = create<ProjectState>()(
   {
     name: "mapwright",
     // Persist only serializable config — never the decoded image/bitmap.
-    partialize: (s) => ({ settings: s.settings, uiMode: s.uiMode }),
+    partialize: (s) => ({ settings: s.settings, uiMode: s.uiMode, theme: s.theme }),
   },
   ),
 );

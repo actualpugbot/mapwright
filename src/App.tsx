@@ -11,7 +11,19 @@ import { exportLitematic } from "@/export";
 export default function App() {
   const source = useProject((s) => s.source);
   const setSource = useProject((s) => s.setSource);
+  const theme = useProject((s) => s.theme);
   const { result, status, error, palette, plan } = useMapArt();
+
+  // Reflect the active theme on <html> (the boot script sets it pre-paint;
+  // this keeps it in sync when the user toggles or persisted state hydrates).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    root.style.colorScheme = theme;
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "dark" ? "#0e1318" : "#eef0ed");
+  }, [theme]);
 
   const canExport = Boolean(plan && palette && source);
   const onExport = useCallback(() => {
