@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { BuildPlan } from "@/mapart/buildPlan";
 import { forEachBlock } from "@/mapart/buildPlan";
 import { blockLookup, textureUrl, type LoadedPalette } from "@/mapart/palette";
+import { useProject } from "@/state/projectStore";
 
 /** Above this many cubes we skip the 3D view to stay responsive. */
 const MAX_INSTANCES = 220_000;
@@ -147,6 +148,7 @@ interface BuildPreview3DProps {
 }
 
 export function BuildPreview3D({ plan, palette, sliceMax, showSupports }: BuildPreview3DProps) {
+  const dark = useProject((s) => s.theme === "dark");
   const tooBig = plan.visibleCount + plan.supportCount > MAX_INSTANCES;
   const span = Math.max(plan.width, plan.length);
 
@@ -167,8 +169,8 @@ export function BuildPreview3D({ plan, palette, sliceMax, showSupports }: BuildP
       camera={{ position: [span * 0.7, span * 0.6, span * 0.9], fov: 45, far: span * 6 + 100 }}
       className="!absolute inset-0"
     >
-      <color attach="background" args={["#eef0ed"]} />
-      <hemisphereLight intensity={0.75} groundColor="#dde1dc" />
+      <color attach="background" args={[dark ? "#0e1318" : "#eef0ed"]} />
+      <hemisphereLight intensity={0.75} groundColor={dark ? "#1a212a" : "#dde1dc"} />
       <directionalLight position={[span, span * 1.4, span * 0.6]} intensity={1.5} castShadow />
       <Suspense fallback={null}>
         <Scene plan={plan} palette={palette} sliceMax={sliceMax} showSupports={showSupports} />

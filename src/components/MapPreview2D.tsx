@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { MapArtResult } from "@/mapart/render";
 import { resultToImageData } from "@/mapart/preview";
 import { MAP_SIZE } from "@/types";
+import { useProject } from "@/state/projectStore";
 
 interface MapPreview2DProps {
   result: MapArtResult;
@@ -11,6 +12,7 @@ interface MapPreview2DProps {
 /** Pixel-perfect render of the map-art result, fit to its container. */
 export function MapPreview2D({ result, showGrid = true }: MapPreview2DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dark = useProject((s) => s.theme === "dark");
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -36,9 +38,13 @@ export function MapPreview2D({ result, showGrid = true }: MapPreview2DProps) {
           <div
             className="pointer-events-none absolute inset-0"
             style={{
-              backgroundImage:
-                "linear-gradient(to right, rgba(28,39,48,0.28) 1px, transparent 1px)," +
-                "linear-gradient(to bottom, rgba(28,39,48,0.28) 1px, transparent 1px)",
+              backgroundImage: (() => {
+                const line = dark ? "rgba(226,232,240,0.30)" : "rgba(28,39,48,0.28)";
+                return (
+                  `linear-gradient(to right, ${line} 1px, transparent 1px),` +
+                  `linear-gradient(to bottom, ${line} 1px, transparent 1px)`
+                );
+              })(),
               backgroundSize: `${100 / mapsWide}% ${100 / mapsTall}%`,
             }}
           />

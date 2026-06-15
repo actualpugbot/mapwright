@@ -1,30 +1,38 @@
 /** @type {import('tailwindcss').Config} */
+// Helper: a color backed by a CSS custom property holding "R G B" channels,
+// so Tailwind's opacity modifiers (bg-ink-850/70, ring-accent/40) keep working
+// while the actual values swap between light/dark via the `.dark` class.
+// The channel values live in src/index.css (:root and .dark).
+const v = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Calm "paper" surface scale (light) + one confident blue accent.
-        // The scale runs light → dark as the number climbs so that
-        // surface classes (bg-ink-950/900/850) read as paper/cards and text
-        // classes (text-ink-100/200) read as ink.
+        // Calm "paper" surface scale + one confident blue accent. The scale
+        // runs light → dark as the number climbs so that surface classes
+        // (bg-ink-950/900/850) read as paper/cards and text classes
+        // (text-ink-100/200) read as ink. In dark mode the variables flip so
+        // surfaces become deep slate and text becomes light — same class names.
         ink: {
-          950: "#eceeeb", // paper — app background
-          900: "#f2f4f1", // sunken surface — fields, segmented track, chips
-          850: "#ffffff", // surface — floating cards
-          800: "#e8ebe6", // faint fill / hairline border
-          700: "#dde1dc", // line-strong — borders, slider track
-          600: "#c2c8c1", // faint line — dashed dropzone, footer
-          500: "#9aa4ae", // faint text / placeholder
-          400: "#6c7884", // muted text
-          300: "#3a4750", // soft ink — secondary text
-          200: "#28333c", // strong ink
-          100: "#1c2730", // ink — primary text
+          950: v("--ink-950"), // paper — app background
+          900: v("--ink-900"), // sunken surface — fields, segmented track, chips
+          850: v("--ink-850"), // surface — floating cards
+          800: v("--ink-800"), // faint fill / hairline border
+          700: v("--ink-700"), // line-strong — borders, slider track
+          600: v("--ink-600"), // faint line — dashed dropzone, footer
+          500: v("--ink-500"), // faint text / placeholder
+          400: v("--ink-400"), // muted text
+          300: v("--ink-300"), // soft ink — secondary text
+          200: v("--ink-200"), // strong ink
+          100: v("--ink-100"), // ink — primary text
         },
         accent: {
-          DEFAULT: "#2f74e0",
-          soft: "#1f63cf", // darker — button hover / press
-          glow: "#1f63cf", // hover accent for links & icons
+          DEFAULT: v("--accent"),
+          soft: v("--accent-soft"), // button hover / press
+          glow: v("--accent-glow"), // hover accent for links & icons
         },
         // Brand cube gradient (blue → teal).
         brand: {
