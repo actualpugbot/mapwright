@@ -1,5 +1,7 @@
 import { MAP_SIZE, type ImageAdjustments, type Settings } from "@/types";
 import type { SourceImage } from "@/state/projectStore";
+import { hexToRgb } from "@/mapart/color";
+import { fillTransparent } from "@/lib/inpaint";
 
 // ---------------------------------------------------------------------------
 // Loading
@@ -11,7 +13,26 @@ export async function loadImageFromBlob(
 ): Promise<SourceImage> {
   const bitmap = await createImageBitmap(blob);
   const url = URL.createObjectURL(blob);
-  return { name, url, width: bitmap.width, height: bitmap.height, bitmap };
+  return {
+    name,
+    url,
+    width: bitmap.width,
+    height: bitmap.height,
+    bitmap,
+    hasTransparency: detectTransparency(bitmap),
+  };
+}
+
+/** True if the image contains any fully transparent pixel (alpha 0). */
+function detectTransparency(bitmap: ImageBitmap): boolean {
+  const c = makeCanvas(bitmap.width, bitmap.height);
+  const ctx = c.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(bitmap, 0, 0);
+  const { data } = ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] === 0) return true;
+  }
+  return false;
 }
 
 export async function loadImageFromFile(file: File): Promise<SourceImage> {
@@ -85,25 +106,26 @@ function filterString(a: ImageAdjustments): string {
 
 /**
  * Produce the processed ImageData at the target block dimensions: oriented,
- * colour-adjusted, scaled to fit (cover), with optional background fill for
- * transparency. Transparent pixels (alpha 0) are left transparent → mapped to
- * NONE / skipped by the quantizer.
+ * colour-adjusted, scaled to fit (cover).
+ *
+ * When `allowTransparency` is true, the source's alpha is preserved so the
+ * quantizer can leave transparent areas blank. Otherwise every transparent
+ * pixel is inpainted with the nearest image colour, so every cell becomes a
+ * solid block of the right colour. Callers pass `allowTransparency` only when
+ * the source genuinely has an alpha channel — this also scrubs the stray
+ * transparent pixels the canvas downscaler can fabricate from an opaque image.
  */
 export function processImage(
   bitmap: ImageBitmap,
   adjust: ImageAdjustments,
   targetW: number,
   targetH: number,
+  allowTransparency = false,
 ): ImageData {
   const oriented = orient(bitmap, adjust.rotate, adjust.flipH, adjust.flipV);
 
   const out = makeCanvas(targetW, targetH);
   const ctx = out.getContext("2d", { willReadFrequently: true })!;
-
-  if (adjust.background) {
-    ctx.fillStyle = adjust.background;
-    ctx.fillRect(0, 0, targetW, targetH);
-  }
 
   // "cover" fit: scale so the image fills the target, centre-cropped.
   const scale = Math.max(targetW / oriented.width, targetH / oriented.height);
@@ -118,7 +140,11 @@ export function processImage(
   ctx.drawImage(oriented, dx, dy, dw, dh);
   ctx.filter = "none";
 
-  return ctx.getImageData(0, 0, targetW, targetH);
+  const data = ctx.getImageData(0, 0, targetW, targetH);
+  if (!allowTransparency) {
+    fillTransparent(data.data, targetW, targetH, hexToRgb(adjust.background ?? "#000000"));
+  }
+  return data;
 }
 
 /** Render an ImageData to a fresh canvas (used for displaying processed source). */

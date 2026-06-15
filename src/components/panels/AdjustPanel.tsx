@@ -5,6 +5,7 @@ import type { ImageAdjustments } from "@/types";
 export function AdjustPanel() {
   const adjust = useProject((s) => s.settings.adjust);
   const patchAdjust = useProject((s) => s.patchAdjust);
+  const source = useProject((s) => s.source);
 
   return (
     <div className="space-y-3">
@@ -27,24 +28,60 @@ export function AdjustPanel() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <span className="text-sm text-ink-300">Transparency</span>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => patchAdjust({ background: null })}
-            className={`checker h-7 w-7 rounded-md border ${adjust.background === null ? "border-accent" : "border-ink-700"}`}
-            title="Keep transparent (maps to nothing)"
-          />
-          <input
-            type="color"
-            value={adjust.background ?? "#000000"}
-            onChange={(e) => patchAdjust({ background: e.target.value })}
-            className="h-7 w-7 cursor-pointer rounded-md border border-ink-700 bg-transparent"
-            title="Fill transparent areas with a colour"
-          />
-        </div>
-      </div>
+      {(() => {
+        // "Leave blank" only does anything when the source actually has an alpha
+        // channel. For an opaque image every pixel always becomes a block.
+        const opaque = !!source && !source.hasTransparency;
+        return (
+          <>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-sm text-ink-300">Transparent areas</span>
+              <div className="flex items-center overflow-hidden rounded-md border border-ink-700 text-xs">
+                <button
+                  type="button"
+                  onClick={() => patchAdjust({ allowTransparency: false })}
+                  title="Fill transparent areas with nearby colours"
+                  className={`h-7 px-2.5 ${
+                    !adjust.allowTransparency
+                      ? "bg-accent/15 text-ink-100"
+                      : "text-ink-300 hover:bg-ink-800/60"
+                  }`}
+                >
+                  Fill
+                </button>
+                <button
+                  type="button"
+                  disabled={opaque}
+                  onClick={() => patchAdjust({ allowTransparency: true })}
+                  title={
+                    opaque
+                      ? "This image is fully opaque — nothing to leave blank"
+                      : "Leave transparent areas blank (no blocks)"
+                  }
+                  className={`h-7 border-l border-ink-700 px-2.5 ${
+                    opaque
+                      ? "cursor-not-allowed text-ink-600"
+                      : adjust.allowTransparency
+                        ? "bg-accent/15 text-ink-100"
+                        : "text-ink-300 hover:bg-ink-800/60"
+                  }`}
+                >
+                  Leave blank
+                </button>
+              </div>
+            </div>
+            {source && (
+              <p className="text-xs text-ink-500">
+                {opaque
+                  ? "Fully opaque image — every pixel becomes a block."
+                  : adjust.allowTransparency
+                    ? "Transparent areas are left blank."
+                    : "Transparent areas are filled with nearby colours."}
+              </p>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }

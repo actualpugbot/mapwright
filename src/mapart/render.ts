@@ -4,6 +4,7 @@ import {
   type LoadedPalette,
   type MatchTarget,
 } from "@/mapart/palette";
+import type { QuantizeOptions } from "@/mapart/quantize";
 import type { Settings } from "@/types";
 
 export interface MapArtResult {
@@ -42,7 +43,7 @@ function quantizeInWorker(
   width: number,
   height: number,
   targets: MatchTarget[],
-  opts: { metric: Settings["metric"]; dither: Settings["dither"]; strength: number },
+  opts: QuantizeOptions,
 ): Promise<Int16Array> {
   return new Promise((resolve) => {
     const reqId = ++_seq;
@@ -68,14 +69,21 @@ export async function renderMapArt(
   bitmap: ImageBitmap,
   settings: Settings,
   palette: LoadedPalette,
+  sourceHasTransparency = false,
 ): Promise<MapArtResult> {
   const { width, height } = targetDimensions(settings);
-  const imageData = processImage(bitmap, settings.adjust, width, height);
+  // "Leave blank" only applies when the source genuinely has an alpha channel.
+  // An opaque image can never be left blank — so canvas resampling artefacts
+  // (stray transparent pixels from the downscale) are always filled, never
+  // dropped. This is what guarantees an opaque image never has empty cells.
+  const allowTransparency = settings.adjust.allowTransparency && sourceHasTransparency;
+  const imageData = processImage(bitmap, settings.adjust, width, height, allowTransparency);
   const targets = buildMatchTargets(palette, settings);
   const index = await quantizeInWorker(imageData.data, width, height, targets, {
     metric: settings.metric,
     dither: settings.dither,
     strength: settings.ditherStrength,
+    allowTransparency,
   });
   return { width, height, targets, index };
 }

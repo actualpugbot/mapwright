@@ -33,6 +33,15 @@ export function rgbToLab([r, g, b]: RGB): Lab {
   return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
 }
 
+/** Parse a #rgb / #rrggbb hex string to an 8-bit RGB triple (defaults to black). */
+export function hexToRgb(hex: string): RGB {
+  const h = hex.replace("#", "").trim();
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const n = Number.parseInt(full, 16);
+  if (full.length !== 6 || Number.isNaN(n)) return [0, 0, 0];
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
 // --- distances --------------------------------------------------------------
 
 /** Squared Euclidean distance in RGB. */
